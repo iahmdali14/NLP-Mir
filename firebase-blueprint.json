@@ -1,0 +1,77 @@
+{
+  "entities": {
+    "ProcessingJob": {
+      "title": "Processing Job",
+      "description": "Information about a long-running PDF processing task",
+      "type": "object",
+      "properties": {
+        "jobId": { "type": "string" },
+        "fileName": { "type": "string" },
+        "status": {
+          "type": "string",
+          "enum": ["queued", "processing", "completed", "failed"]
+        },
+        "currentStage": { "type": "string" },
+        "progressPercentage": { "type": "number" },
+        "error": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["jobId", "status", "createdAt"]
+    },
+    "DocumentChunk": {
+      "title": "Document Chunk",
+      "description": "A single text chunk extracted from a document with associated metadata and embeddings",
+      "type": "object",
+      "properties": {
+        "chunkId": { "type": "string" },
+        "documentId": { "type": "string" },
+        "jobId": { "type": "string" },
+        "text": { "type": "string" },
+        "cleanText": { "type": "string" },
+        "embedding": { "type": "array" },
+        "primarySection": { "type": "string" },
+        "sectionConfidence": { "type": "number" },
+        "secondarySections": { "type": "array" },
+        "pageNumber": { "type": "number" },
+        "charStart": { "type": "number" },
+        "charEnd": { "type": "number" },
+        "containsEntity": { "type": "array" },
+        "importanceScore": { "type": "number" },
+        "tokenCount": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["chunkId", "documentId", "text", "createdAt"]
+    },
+    "RetrievalTrace": {
+      "title": "Retrieval Trace",
+      "description": "Log of a retrieval and re-ranking operation for auditing and RAGAS evaluation",
+      "type": "object",
+      "properties": {
+        "queryId": { "type": "string" },
+        "query": { "type": "string" },
+        "retrievedChunkIds": { "type": "array" },
+        "crossEncoderScores": { "type": "array" },
+        "selectedChunkIds": { "type": "array" },
+        "contextPrecision": { "type": "number" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["queryId", "query", "timestamp"]
+    }
+  },
+  "firestore": {
+    "processing_jobs/{jobId}": {
+      "schema": "ProcessingJob",
+      "description": "Collection tracks the lifecycle of document processing tasks"
+    },
+    "document_chunks/{chunkId}": {
+      "schema": "DocumentChunk",
+      "description": "Collection stores segmented document text with vector embeddings"
+    },
+    "retrieval_traces/{queryId}": {
+      "schema": "RetrievalTrace",
+      "description": "Collection logs RAG retrieval outcomes for quality evaluation"
+    }
+  }
+}

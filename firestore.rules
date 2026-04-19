@@ -1,0 +1,50 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default-deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // AUTH HELPERS
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    function isVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+    function isValidId(id) {
+       return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // PROCESSING JOBS
+    // Jobs can be read by anyone signed in (for dashboard tracking) or restricted to the uploader if we had an ownerId.
+    // In this app, we'll allow signed-in users to track jobs.
+    match /processing_jobs/{jobId} {
+      allow get, list: if isVerified();
+      // Only the server service account should create/update jobs normally, 
+      // but for client-triggered uploads we might allow creation if authenticated.
+      // However, we'll restrict it to server-side creation for security.
+      allow write: if false; 
+    }
+
+    // DOCUMENT CHUNKS
+    match /document_chunks/{chunkId} {
+      // Secure list: users can only see chunks for which they have access.
+      // For this demo, we assume global access for verified users, but in production we'd filter by documentId ownership.
+      allow get: if isVerified();
+      allow list: if isVerified() && resource.data.documentId != null;
+      allow write: if false; // Server-only writes
+    }
+
+    // RETRIEVAL TRACES
+    match /retrieval_traces/{queryId} {
+      allow get: if isVerified();
+      allow list: if isVerified() && resource.data.timestamp != null;
+      allow write: if false; // Server-only
+    }
+  }
+}
